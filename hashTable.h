@@ -12,9 +12,9 @@ typedef struct Ht_item {
     char* key;            // String representation of the id
     StatData* value;      // Pointer to the StatData
     struct Ht_item* next; // For chaining
-    uint8_t dirty;           // Mark every created item
 } Ht_item;
 
+// Caller shouldn't free key string
 Ht_item* create_item(const char* key, void* value);
 
 void free_item(Ht_item* item);
@@ -29,17 +29,27 @@ HashTable* create_table(int size);
 
 void free_table(HashTable* table);
 
+// Depends on length of long
+uint64_t hash_function(long id, int capacity);
+uint64_t hash_function_fast(long id, int capacity);
+// uint64_t hash_murmur(long id, int capacity);
 
-unsigned long hash_function(long id, int capacity);
-
+// Function expects that key is valid representation of long!
 void ht_insert(HashTable* table, char* key, StatData* value);
 
+// This method is little un contre. 
+// Instead of adding collision to the list it perfoms merge_callback on old and new values of key
+// This way we can calculate sums, find maximum/minimum, enumerate, etc.
+void ht_merge_key(HashTable* table, char* key, StatData* value, void (*merge_callback)(StatData*, StatData*));
+
 void ht_insert_stat_data(HashTable* table, StatData* data);
+void ht_merge_stat_data(HashTable* table, StatData* data, void (*merge_callback)(StatData*, StatData*));
 
 StatData* ht_search(HashTable* table, char* key);
 
 void ht_delete(HashTable* table, char* key);
 
+size_t countItems(HashTable* ht);
 
 void ht_iterate(HashTable* table, void (*callback)(Ht_item*));
 

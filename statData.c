@@ -8,7 +8,7 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-int compareStatData(const void *a, const void *b) {
+int compareStatData(const void* a, const void* b) {
     StatData *dataA = (StatData *)a;
     StatData *dataB = (StatData *)b;
     if (dataA->cost < dataB->cost) return -1;
@@ -16,57 +16,66 @@ int compareStatData(const void *a, const void *b) {
     return 0;
 }
 
-void SortDump(const StatData* array, size_t len)
+void SortDump(StatData* array, size_t len)
 {
     qsort((StatData*)array, len, sizeof(StatData), compareStatData);
 }
 
-StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t* result_len)
-{
-    // use HashTable? O(n) + O(n) + O(n)
-    // sort each of those and combine? O(n*logn) * 2 + O(n) 
-    // bruteforce? O(n^2)
-    
-    HashTable* ht = create_table(a_len + b_len);
+void mergeDumpItems(StatData* old, StatData* new) {
+    if(!old || !new)
+        return;
+
+    old->count += new->count;    
+    old->cost  += new->cost;    
+    old->primary &= new->primary;
+    old->mode = MAX(new->mode, old->mode);
+}
+
+StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t* result_len) {
+    HashTable* ht = create_table(a_len + b_len); // Worst case we store a_len + b_len elements.
+    if(!ht) {
+        perror("statData.c JoinDump()::Failed to create hash table in JoinDump.");
+        return NULL;
+    }
+
+    // Add items from Dump b into table. 
+    // Method InsertDumpToHT merges datas with simmilar ids.  
     InsertDumpToHT(a, a_len, ht);
-    
+
+    // Add values from b.
     for (size_t i = 0; i < b_len; i++) {
-        char key[20];
+        char key[HASH_KEY_SIZE];
         snprintf(key, sizeof(key), "%ld", b[i].id);
-        StatData* found = ht_search(ht,key);
-        if(found) {
-            found->count += b[i].count;    
-            found->cost  += b[i].cost;    
-            found->primary = (found->primary | b[i].primary);
-            found->mode = MAX(found->mode, b[i].mode);
+
+        StatData* found = ht_search(ht, key);
+        if(found != NULL) {
+            char key_found[HASH_KEY_SIZE];
+            snprintf(key_found, sizeof(key_found), "%ld", found->id);
+
+            if(strcmp(key, key_found) == 0) {
+                mergeDumpItems(found, &b[i]);
+            }
+
         } 
-        else{
+        else {
             ht_insert(ht, key, &b[i]);
+            //ht_merge_key(ht, key, &b[i], mergeDumpItems);
         }
     }
 
-    size_t count_items = 0;
-    for (int i = 0; i < ht->size; i++) {
-        Ht_item* current = ht->items[i];
-        while (current != NULL && current->dirty) {
-            count_items++;
-            current = current->next;
-        }
-    }
-
-    *result_len = count_items;
-
-    StatData* res = (StatData*)malloc(sizeof(StatData) * count_items);
+    // Count number of items, before allocation and allocate.
+    *result_len = countItems(ht);
+    StatData* res = (StatData*)malloc(sizeof(StatData) * (*result_len));
     if(!res){
-        perror("Failed to allocate memory for result Dump in JoinDump.");
-        free(res);
-        return res;
+        perror("statData.c JoinDump()::Failed to allocate memory for result Dump in JoinDump.");
+        return NULL;
     }
 
+    // Iterate through table and copy elements to result array.
     size_t resI = 0;
     for (int i = 0; i < ht->size; i++) {
         Ht_item* current = ht->items[i];
-        while (current != NULL && current->dirty) {
+        while (current != NULL) {
             memcpy(&res[resI++], current->value, sizeof(StatData));
             current = current->next;
         }
@@ -79,17 +88,21 @@ StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t*
 
 int StoreDump(const StatData* const data_arr, size_t len, const char* filename)
 {
+    if(!data_arr) {
+        return -4;
+    }
+
 	FILE* outfile = fopen(filename, "wb"); 
 	if (!outfile) {
 	    perror("Error opening file");
-	    fclose(outfile);
 	    return -1; 
 	}
 
+    // Explicitly write amount of Dump packets we store, for additional security.
 	size_t size_written = fwrite(&len, sizeof(len), 1, outfile);
 
 	if(size_written != 1){
-	    perror("Error writing size to file.");
+	    perror("statData.c StoreDump()::Error writing size of Dump to file.");
 	    fclose(outfile);
 	    return -2;
 	}
@@ -97,7 +110,7 @@ int StoreDump(const StatData* const data_arr, size_t len, const char* filename)
 	size_t elements_written = fwrite(data_arr, sizeof(StatData), len, outfile);
 
 	if(elements_written != len){
-	    perror("Error writing length of dump to file.");
+	    perror("statData.c StoreDump():: Error writing Dump to file.");
 	    fclose(outfile);
 	    return -3;
 	}
@@ -108,58 +121,65 @@ int StoreDump(const StatData* const data_arr, size_t len, const char* filename)
 
 StatData* LoadDump(const char* filename, size_t* return_size)
 {
-    size_t n = sizeof(StatData);
-    unsigned char buffer[n];
+    uint8_t buffer[sizeof(StatData)];
 
     FILE* fp = fopen(filename, "rb");
     if (!fp) {
-        perror("Error opening file\n");
-        fclose(fp);
+        perror("statData.c LoadDump()::Error opening file\n");
         return NULL;
     }
 
     size_t bytes_read = fread(buffer, 1, sizeof(size_t), fp);
 
     if(bytes_read != sizeof(size_t)){
-        perror("Error reading length of file");
-        fclose(fp);
+        perror("statData.c LoadDump()::Error reading length of file");
         return NULL;
     }
 
-    size_t len_of_file = 0;
-    memcpy(&len_of_file, buffer, sizeof(len_of_file));
-    uint8_t* res = (uint8_t*)malloc(sizeof(StatData) * len_of_file);
+    size_t amount_of_packets = 0;
+    memcpy(&amount_of_packets, buffer, sizeof(amount_of_packets));
+    uint8_t* res = (uint8_t*)malloc(sizeof(StatData) * amount_of_packets);
+    if(!res) { 
+        perror("statData.c LoadDump()::Error reading length of file");
+        return NULL;
+    }
 
     size_t offset = 0;
-
-    while ((bytes_read = fread(buffer, 1, n, fp)) > 0) {
-        if(bytes_read == n) {
-            memcpy(res+offset, buffer, n); 
+    while ((bytes_read = fread(buffer, 1, sizeof(StatData), fp)) > 0) {
+        if(bytes_read == sizeof(StatData)) {
+            memcpy(res+offset, buffer, sizeof(StatData)); 
             offset+=bytes_read;
         }
         else {
-            perror("Error reading file\n");
+            perror("statData.c LoadDump()::Error reading file\n");
             break;    
         }
     }
 
     if (ferror(fp)) {
-        perror("Error reading file\n");
+        perror("statData.c LoadDump()::Error reading file\n");
     }
 
     fclose(fp);
 
-    *return_size = offset/n;
+    *return_size = offset/sizeof(StatData);
     return (StatData*)res;	
 }
 
+void PrintBinary(unsigned int n) {
+    // Assuming a 32-bit unsigned integer
+    for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
+        putchar((n & (1U << i)) ? '1' : '0');
+    }
+    putchar('\n'); // New line after printing the binary number
+}
+
 void PrintDump(const StatData* data_array, size_t array_size){
-    printf("Printing dump %ld\n", array_size);
     for (size_t i = 0; i < array_size; i++) {
-        printf("Data %ld: id=%ld, count=%d, cost=%.2f, primary=%u, mode=%u\n",
+        printf("Data %ld: id=%ld, count=%d, cost=%f, primary=%s, mode=",
                i, data_array[i].id, data_array[i].count, data_array[i].cost,
-               data_array[i].primary, data_array[i].mode);
+               data_array[i].primary == 1 ? "y" : "n");
+        PrintBinary(data_array[i].mode);
     }
 }
 
-#
