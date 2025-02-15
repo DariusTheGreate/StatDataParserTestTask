@@ -11,7 +11,8 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "MSVC")
 endif()
 
 # Add executables
+add_executable(prepareDumpForProcessor prepareMain.c hashTable.c statData.c)
 add_executable(statDataProcessor main.c hashTable.c statData.c)
 add_executable(fastTest fastTest.c hashTable.c statData.c)
-add_executable(testUtil unitTests.c hashTable.c statData.c)
+add_executable(randomTestUtil unitTests.c hashTable.c statData.c)
 

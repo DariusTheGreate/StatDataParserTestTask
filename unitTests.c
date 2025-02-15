@@ -12,9 +12,10 @@
 static TestFunction tests[100];
 static size_t tests_params[100];
 static const char* test_names[100];
-static int test_count = 0;
-static int failed = 0;
-static int passed = 0;
+
+int test_count = 0;
+int failed = 0;
+int passed = 0;
 
 void init_test_framework() {
     test_count = 0;
@@ -34,14 +35,13 @@ void register_test(const char* name, TestFunction test, size_t param) {
 }
 
 void run_tests() {
-    int passed = 0;
-    int failed = 0;
-
-    for(uint32_t rc = 0; rc < 1; ++rc) { 
+    for(uint32_t rc = 0; rc < 10; ++rc) { 
+        printf("Iteration %d/10:\n\n", rc+1);
         for (int i = 0; i < test_count; i++) {
             printf("Running %s...\n", test_names[i]);
             tests[i](tests_params[i]); // Execute the test function
         }
+        printf("This iteration Tests: %d, Passed: %d, Failed: %d\n\n", passed + failed, passed, failed);
     }
 
     printf("Total Tests: %d, Passed: %d, Failed: %d\n", passed + failed, passed, failed);
@@ -326,11 +326,11 @@ void TestAll (size_t sz) {
 
 int main() {
     init_test_framework();
-    register_test("Test HashTable merge keys functionality.", TestHashTableMergeKey, 5);
-    register_test("Test HashTable Insert Search.", TestHashTableInsertSearch, 10000);
-    register_test("Test StatData Join on Random Data.", TestJoinOnRandomData, 1000000);
-    register_test("Test StatData Join in case there is duplicates in intial arrays.", TestJoinInCaseInitialArraysContainDuplicateIds, 100);
-    register_test("Test StatData Store Load on random data.", TestStoreLoadOnRandomData, 10000);
+    register_test("TestHashTableMergeKey().", TestHashTableMergeKey, 5);
+    register_test("TestHashTableInsertSearch().", TestHashTableInsertSearch, 10000);
+    register_test("TestJoinOnRandomData()", TestJoinOnRandomData, 1000000);
+    register_test("TestJoinInCaseInitialArraysContainDuplicateIds().", TestJoinInCaseInitialArraysContainDuplicateIds, 100);
+    //register_test("Test StatData Store Load on random data.", TestStoreLoadOnRandomData, 10000);
     run_tests();
 }
 

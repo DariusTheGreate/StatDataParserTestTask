@@ -8,13 +8,12 @@
 #include "statData.h"
 
 // Todo:
-// - rename ht functions
-// - test framework cariables
-// - Fix bug from valgrind
+// - random merge bu
 // - Review 
-// - Why prints Success
 // - Refactor print
+// - Add readme
 
+#define MIN(x,y) x > y ? x : y
 
 int main(int argc, char *argv[]) {	
     if(argc < 4){
@@ -33,7 +32,7 @@ int main(int argc, char *argv[]) {
 
     SortDump(joined, joined_len);
 
-    PrintDump(joined, 10);
+    PrintDump(joined, MIN(10, joined_len));
 
     StoreDump(joined, joined_len, argv[3]);
     

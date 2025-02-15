@@ -176,7 +176,7 @@ void PrintBinary(unsigned int n) {
 
 void PrintDump(const StatData* data_array, size_t array_size){
     for (size_t i = 0; i < array_size; i++) {
-        printf("Data %ld: id=%ld, count=%d, cost=%f, primary=%s, mode=",
+        printf("Data %ld: id=%ld, count=%d, cost=%e, primary=%s, mode=",
                i, data_array[i].id, data_array[i].count, data_array[i].cost,
                data_array[i].primary == 1 ? "y" : "n");
         PrintBinary(data_array[i].mode);

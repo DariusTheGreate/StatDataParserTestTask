@@ -299,11 +299,38 @@ void testCase4()
 
 
 int main() {
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
     testCase1();
+    end = clock();
+
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; 
+    printf("Time taken: %f microseconds\n", cpu_time_used * 1000000.0);
+
+    start = clock();
     testCase2();
+    end = clock();
+
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; 
+    printf("Time taken: %f microseconds\n", cpu_time_used * 1000000.0);
+
+    start = clock();
     testCase3();
+    end = clock();
+
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; 
+    printf("Time taken: %f microseconds\n", cpu_time_used * 1000000.0);
+
+    start = clock();
     testCase4();
+    end = clock();
+
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; 
+    printf("Time taken: %f microseconds\n", cpu_time_used * 1000000);
 
     printf("End of fast test\n");
     return 0;
 }
+
