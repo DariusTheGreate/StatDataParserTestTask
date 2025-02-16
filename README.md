@@ -26,8 +26,11 @@ Note: Before writing dump in StoreDump() I write its size, for additional safety
 - fastTest -> for hardcoded unit tests
 - randomTestUtil -> for randomized testing
 >mkdir build
+>
 >cd build
+>
 >cmake ..
+>
 >make
 ## Execute utils and tests
 ### Prepare test dumps
