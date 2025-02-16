@@ -25,8 +25,8 @@ const StatData case_2_in_a[12] =
     {.id = 12, .count = 1, .cost = 1, .primary = 0, .mode=3 },
    };
 
-    StoreDump(case_2_in_a, 11, "data1.bin");
-    StoreDump(case_2_in_a, 3, "data2.bin");
+    assert(StoreDump(case_2_in_a, 11, "data1.bin") == 0 && "Couldn't store dump data1.bin");
+    assert(StoreDump(case_2_in_a, 3, "data2.bin") == 0 && "Couldn't store dump data2.bin");
 }
 
 

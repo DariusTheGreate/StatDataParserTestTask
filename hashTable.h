@@ -8,6 +8,8 @@
 
 #include "statData.h"
 
+#define KEY_BUFFER_LEN 20
+
 typedef struct Ht_item {
     char* key;            // String representation of the id
     StatData* value;      // Pointer to the StatData
@@ -47,9 +49,7 @@ void ht_merge_stat_data(HashTable* table, StatData* data, void (*merge_callback)
 
 StatData* ht_search(HashTable* table, char* key);
 
-void ht_delete(HashTable* table, char* key);
-
-size_t countItems(HashTable* ht);
+uint8_t ht_delete(HashTable* table, char* key);
 
 void ht_iterate(HashTable* table, void (*callback)(Ht_item*));
 

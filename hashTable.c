@@ -8,6 +8,9 @@
 
 #define MAX_HT_SIZE 1000000000
 
+// todo: make size alvaice be power of 2
+
+
 Ht_item* create_item(const char* key, void* value) {
     Ht_item* item = (Ht_item*)malloc(sizeof(Ht_item));
     if(!item){
@@ -38,7 +41,7 @@ void free_item(Ht_item* item) {
 
 HashTable* create_table(int size) {
     if(size > MAX_HT_SIZE || size < 0) {
-        perror("hashTable.c CreateTable()::Invaild size of table");
+        perror("hashTable.c CreateTable()::Invalid size of table");
         return NULL;
     }
 
@@ -59,35 +62,37 @@ HashTable* create_table(int size) {
 }
 
 void free_table(HashTable* table) {
-    if(table && table->items){
-        for (int i = 0; i < table->size; i++) {
-            Ht_item* item = table->items[i];
-            while (item != NULL) {
-                Ht_item* next = item->next;
-                free_item(item);
-                item = next;
+    if(table){
+        if(table->items){
+            for (int i = 0; i < table->size; i++) {
+                Ht_item* item = table->items[i];
+                while (item != NULL) {
+                    Ht_item* next = item->next;
+                    free_item(item);
+                    item = next;
+                }
             }
+            free(table->items);
         }
-        free(table->items);
         free(table);
     }
 }
 
 uint64_t hash_function(long id, int capacity) {
     //FNV-1a hash algorithm
-    unsigned long hash = 0xcbf29ce484222325;
-    unsigned char* key = (unsigned char*)&id;
+    uint64_t hash = 0xcbf29ce484222325;
+    uint8_t* key = (unsigned char*)&id;
     for(size_t i = 0; i < sizeof(long); i++){
         hash ^= key[i];
-        hash *= 0x100000001b3;
+        hash *= 0x100000001b3; // for 32bit better use other number 
     }
     return hash % capacity;
 }
 
 uint64_t hash_function_fast(long id, int capacity) {
-    unsigned long hash = 5381; 
+    uint64_t hash = 5381; 
 
-    unsigned char* key = (unsigned char*)&id;
+    uint8_t* key = (unsigned char*)&id;
     for (size_t i = 0; i < sizeof(long); i++) {
         hash = ((hash * 33) + hash) + key[i];
     }
@@ -118,14 +123,17 @@ void ht_insert(HashTable* table, char* key, StatData* value) {
 }
 
 void ht_merge_key(HashTable* table, char* key, StatData* value, void (*merge_callback)(StatData*, StatData*)) {
-    if(!table || !value || !table->items) {
+    if(!table || !value || !table->items || key == NULL) {
         return;
     }
 
     int index = hash_function(atol(key), table->size);  
     //assert(index > 0 && index < table->size);
     Ht_item* item = create_item(key, value);
-    assert(item);
+    if(!item) {
+        perror("Unable to create_item in ht_merge_key()");
+        return;
+    }
 
     if(!table->items[index]) {
         //No collision, create the item
@@ -135,37 +143,32 @@ void ht_merge_key(HashTable* table, char* key, StatData* value, void (*merge_cal
     else {
         //Iterate branch:
         Ht_item* iter = table->items[index];
-        uint8_t mergeAccured = 0;
         while(iter != NULL) {
             // Collision, in case of duplicate id - merge keys via merge_callback.
             if(strcmp(key, iter->key) == 0) { 
-                mergeAccured = 1;
-                //printf("Merge: %s and %s(new) ", table->items[index]->key, key);
-                merge_callback(table->items[index]->value, item->value);
+                //merge_callback(table->items[index]->value, item->value);
+                merge_callback(iter->value, item->value);
                 free_item(item);// We dont need this item after merge.
+                return;
             }              
-
             iter = iter->next;
         }
 
         // Add new item to branch in case theres no elements to merge with.
-        if(mergeAccured == 0) {
-            //printf("Add into branch: %s", item->key);
-            item->next = table->items[index];
-            table->items[index] = item;
-            table->count++;
-        }
+        item->next = table->items[index];
+        table->items[index] = item;
+        table->count++;
     }
 }
 
 void ht_insert_stat_data(HashTable* table, StatData* data) {
-    char key[20]; //Sufficiently large buffer for the long
+    char key[KEY_BUFFER_LEN]; //Sufficiently large buffer for the long
     snprintf(key, sizeof(key), "%ld", data->id);
     ht_insert(table, key, data);
 }
 
 void ht_merge_stat_data(HashTable* table, StatData* data, void (*merge_callback)(StatData*, StatData*)) {
-    char key[20]; //Sufficiently large buffer for the long
+    char key[KEY_BUFFER_LEN]; //Sufficiently large buffer for the long
     snprintf(key, sizeof(key), "%ld", data->id);
     ht_merge_key(table, key, data, merge_callback);
 }
@@ -187,11 +190,12 @@ StatData* ht_search(HashTable* table, char* key) {
     return NULL;
 }
 
-void ht_delete(HashTable* table, char* key) {
+uint8_t ht_delete(HashTable* table, char* key) {
     if(!table || !table->items)
-        return;
+        return -1;
 
     int index = hash_function(atol(key), table->size);
+    //assert(index > 0 && index < size);
     Ht_item* current = table->items[index];
     Ht_item* prev = NULL;
 
@@ -205,28 +209,14 @@ void ht_delete(HashTable* table, char* key) {
 
             free_item(current);
             table->count--;
-            return;
+            return 0;
         }
 
         prev = current;
         current = current->next;
     }
-}
 
-size_t countItems(HashTable* ht) {
-    if(!ht || !ht->items)
-        return 0;
-
-    size_t count_items = 0;
-    for (int i = 0; i < ht->size; i++) {
-        Ht_item* current = ht->items[i];
-        while (current != NULL) {
-            count_items++;
-            current = current->next;
-        }
-    }
-
-    return count_items;
+    return -1;
 }
 
 void ht_iterate(HashTable* table, void (*callback)(Ht_item*)) {
@@ -241,33 +231,6 @@ void ht_iterate(HashTable* table, void (*callback)(Ht_item*)) {
             current = current->next;
         }
     }
-}
-
-int containsDuplicatesCheck(HashTable* table, StatData* a, StatData* b) {
-    (void)a;
-    (void)b;
-    for(int j = 0; j < table->size; ++j) {
-        Ht_item* currentJ = table->items[j];
-        while(currentJ != NULL) { 
-            if(currentJ->value) {
-                for (int i = 0; i < table->size; i++) {
-                    Ht_item* current = table->items[i];
-                    while (current != NULL) {
-                        if(current != currentJ && current->value && current->value->id == currentJ->value->id) {
-                            printf("Duplicates detected %ld, %ld\n", current->value->id, currentJ->value->id);
-                            a = current->value;
-                            b = currentJ->value;
-                            return 1;
-                        }
-                        current = current->next;
-                    }
-                }
-            }
-            currentJ = currentJ->next;
-        }
-    }
-
-    return 0;
 }
 
 void InsertDumpToHT(StatData* data_array, size_t array_size, HashTable* ht)

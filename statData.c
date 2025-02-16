@@ -6,11 +6,17 @@
 #include "statData.h"
 #include "hashTable.h"
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+static inline size_t MIN(size_t x, size_t y) {
+    return (x > y) ? y : x;
+}
+
+static inline size_t MAX(size_t x, size_t y) {
+    return (x > y) ? x : y;
+}
 
 int compareStatData(const void* a, const void* b) {
-    StatData *dataA = (StatData *)a;
-    StatData *dataB = (StatData *)b;
+    const StatData *dataA = (const StatData *)a;
+    const StatData *dataB = (const StatData *)b;
     if (dataA->cost < dataB->cost) return -1;
     if (dataA->cost > dataB->cost) return 1;
     return 0;
@@ -18,7 +24,9 @@ int compareStatData(const void* a, const void* b) {
 
 void SortDump(StatData* array, size_t len)
 {
-    qsort((StatData*)array, len, sizeof(StatData), compareStatData);
+    if(!array)
+        return;
+    qsort(array, len, sizeof(StatData), compareStatData);
 }
 
 void mergeDumpItems(StatData* old, StatData* new) {
@@ -38,36 +46,16 @@ StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t*
         return NULL;
     }
 
-    // Add items from Dump b into table. 
+    // Add items from Dump a and b into table. 
     // Method InsertDumpToHT merges datas with simmilar ids.  
     InsertDumpToHT(a, a_len, ht);
+    InsertDumpToHT(b, b_len, ht);
 
-    // Add values from b.
-    for (size_t i = 0; i < b_len; i++) {
-        char key[HASH_KEY_SIZE];
-        snprintf(key, sizeof(key), "%ld", b[i].id);
-
-        StatData* found = ht_search(ht, key);
-        if(found != NULL) {
-            char key_found[HASH_KEY_SIZE];
-            snprintf(key_found, sizeof(key_found), "%ld", found->id);
-
-            if(strcmp(key, key_found) == 0) {
-                mergeDumpItems(found, &b[i]);
-            }
-
-        } 
-        else {
-            ht_insert(ht, key, &b[i]);
-            //ht_merge_key(ht, key, &b[i], mergeDumpItems);
-        }
-    }
-
-    // Count number of items, before allocation and allocate.
-    *result_len = ht->count;//countItems(ht);
+    *result_len = ht->count;
     StatData* res = (StatData*)malloc(sizeof(StatData) * (*result_len));
     if(!res){
         perror("statData.c JoinDump()::Failed to allocate memory for result Dump in JoinDump.");
+        free_table(ht);
         return NULL;
     }
 
