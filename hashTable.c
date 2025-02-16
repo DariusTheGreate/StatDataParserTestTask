@@ -8,9 +8,6 @@
 
 #define MAX_HT_SIZE 1000000000
 
-// todo: make size alvaice be power of 2
-
-
 HtItem* create_item(const char* key, void* value) {
     HtItem* item = (HtItem*)malloc(sizeof(HtItem));
     if(!item){

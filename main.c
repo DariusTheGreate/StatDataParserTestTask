@@ -7,9 +7,6 @@
 #include "hashTable.h"
 #include "statData.h"
 
-// Todo:
-// - Add readme
-
 static inline size_t MIN(size_t x, size_t y) {
     return (x > y) ? x : y;
 }

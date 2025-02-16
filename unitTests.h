@@ -1,8 +1,6 @@
 #ifndef UNIT_TEST_H
 #define UNIT_TEST_H
 
-#include <stdio.h>
-
 struct StatData;
 
 typedef void (*TestFunction)(size_t);

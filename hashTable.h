@@ -1,14 +1,13 @@
 #ifndef _HASH_TABLE_
 #define _HASH_TABLE
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "statData.h"
 
 #define KEY_BUFFER_LEN 20
+
+//TODO:
+// - Enforce size to be power of 2
+// - Better hash, use string hash for keys hashing
 
 typedef struct HtItem {
     char* key;            // String representation of the id

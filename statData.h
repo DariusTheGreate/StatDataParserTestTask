@@ -3,10 +3,7 @@
 
 #define HASH_KEY_SIZE 20
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+//TODO: add CRC/hashing of dump for additional security  
 
 typedef struct StatData {
 	long id;
@@ -22,6 +19,7 @@ void SortDump(StatData* array, size_t len);
 
 StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t*);
 
+// Writes 1) len of data_arr for additional security, than writes each packet in data_arr
 int StoreDump(const StatData* const data_arr, size_t len, const char* filename);
 
 StatData* LoadDump(const char* filename, size_t* return_size);
