@@ -64,7 +64,7 @@ StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t*
     }
 
     // Count number of items, before allocation and allocate.
-    *result_len = countItems(ht);
+    *result_len = ht->count;//countItems(ht);
     StatData* res = (StatData*)malloc(sizeof(StatData) * (*result_len));
     if(!res){
         perror("statData.c JoinDump()::Failed to allocate memory for result Dump in JoinDump.");
@@ -176,7 +176,7 @@ void PrintBinary(unsigned int n) {
 
 void PrintDump(const StatData* data_array, size_t array_size){
     for (size_t i = 0; i < array_size; i++) {
-        printf("Data %ld: id=%ld, count=%d, cost=%e, primary=%s, mode=",
+        printf("Data %ld: id=%lx, count=%d, cost=%e, primary=%s, mode=",
                i, data_array[i].id, data_array[i].count, data_array[i].cost,
                data_array[i].primary == 1 ? "y" : "n");
         PrintBinary(data_array[i].mode);

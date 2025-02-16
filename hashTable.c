@@ -133,12 +133,24 @@ void ht_merge_key(HashTable* table, char* key, StatData* value, void (*merge_cal
         table->count++;
     } 
     else {
-        // Collision, in case of duplicate id - merge keys via merge_callback.
-        if(strcmp(key, table->items[index]->key) == 0) { 
-            merge_callback(table->items[index]->value, item->value);
-            free_item(item);// We dont need this item after merge.
-        } // Add new item to branch in case collision happened with different key
-        else {
+        //Iterate branch:
+        Ht_item* iter = table->items[index];
+        uint8_t mergeAccured = 0;
+        while(iter != NULL) {
+            // Collision, in case of duplicate id - merge keys via merge_callback.
+            if(strcmp(key, iter->key) == 0) { 
+                mergeAccured = 1;
+                //printf("Merge: %s and %s(new) ", table->items[index]->key, key);
+                merge_callback(table->items[index]->value, item->value);
+                free_item(item);// We dont need this item after merge.
+            }              
+
+            iter = iter->next;
+        }
+
+        // Add new item to branch in case theres no elements to merge with.
+        if(mergeAccured == 0) {
+            //printf("Add into branch: %s", item->key);
             item->next = table->items[index];
             table->items[index] = item;
             table->count++;
@@ -231,11 +243,37 @@ void ht_iterate(HashTable* table, void (*callback)(Ht_item*)) {
     }
 }
 
+int containsDuplicatesCheck(HashTable* table, StatData* a, StatData* b) {
+    (void)a;
+    (void)b;
+    for(int j = 0; j < table->size; ++j) {
+        Ht_item* currentJ = table->items[j];
+        while(currentJ != NULL) { 
+            if(currentJ->value) {
+                for (int i = 0; i < table->size; i++) {
+                    Ht_item* current = table->items[i];
+                    while (current != NULL) {
+                        if(current != currentJ && current->value && current->value->id == currentJ->value->id) {
+                            printf("Duplicates detected %ld, %ld\n", current->value->id, currentJ->value->id);
+                            a = current->value;
+                            b = currentJ->value;
+                            return 1;
+                        }
+                        current = current->next;
+                    }
+                }
+            }
+            currentJ = currentJ->next;
+        }
+    }
+
+    return 0;
+}
+
 void InsertDumpToHT(StatData* data_array, size_t array_size, HashTable* ht)
 {
     for (size_t i = 0; i < array_size; i++) {
 	    ht_merge_stat_data(ht, &data_array[i], mergeDumpItems);
-        //ht_insert_stat_data(ht, &data_array[i]);
     }
 }
 

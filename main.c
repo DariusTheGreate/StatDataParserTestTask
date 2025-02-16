@@ -8,9 +8,7 @@
 #include "statData.h"
 
 // Todo:
-// - random merge bu
 // - Review 
-// - Refactor print
 // - Add readme
 
 #define MIN(x,y) x > y ? x : y
