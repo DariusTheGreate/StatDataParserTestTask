@@ -61,8 +61,8 @@ StatData* JoinDump(StatData* a, size_t a_len, StatData* b, size_t b_len, size_t*
 
     // Iterate through table and copy elements to result array.
     size_t resI = 0;
-    for (int i = 0; i < ht->size; i++) {
-        Ht_item* current = ht->items[i];
+    for (size_t i = 0; i < ht->size; i++) {
+        HtItem* current = ht->items[i];
         while (current != NULL) {
             memcpy(&res[resI++], current->value, sizeof(StatData));
             current = current->next;

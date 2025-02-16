@@ -11,16 +11,16 @@
 // todo: make size alvaice be power of 2
 
 
-Ht_item* create_item(const char* key, void* value) {
-    Ht_item* item = (Ht_item*)malloc(sizeof(Ht_item));
+HtItem* create_item(const char* key, void* value) {
+    HtItem* item = (HtItem*)malloc(sizeof(HtItem));
     if(!item){
-        perror("hashTable.c CreateItem()::Failed to allocate memory for Ht_item");
+        perror("hashTable.c CreateItem()::Failed to allocate memory for HtItem");
         return NULL;
     }
 
     item->key = (char*)malloc(strlen(key) + 1);
     if(!item->key){
-        perror("hashTable.c CreateItem()::Failed to allocate memory for Ht_item key");
+        perror("hashTable.c CreateItem()::Failed to allocate memory for HtItem key");
         free(item);
         return NULL;
     }
@@ -32,7 +32,7 @@ Ht_item* create_item(const char* key, void* value) {
     return item;
 }
 
-void free_item(Ht_item* item) {
+void free_item(HtItem* item) {
     if(item && item->key){
         free(item->key);
     }
@@ -52,7 +52,7 @@ HashTable* create_table(int size) {
     }
     table->size = size;
     table->count = 0;
-    table->items = (Ht_item**)calloc(table->size, sizeof(Ht_item*));
+    table->items = (HtItem**)calloc(table->size, sizeof(HtItem*));
      if(!table->items){
         perror("hashTable.c CreateTable()::calloc failed");
         free(table);
@@ -64,10 +64,10 @@ HashTable* create_table(int size) {
 void free_table(HashTable* table) {
     if(table){
         if(table->items){
-            for (int i = 0; i < table->size; i++) {
-                Ht_item* item = table->items[i];
+            for (size_t i = 0; i < table->size; i++) {
+                HtItem* item = table->items[i];
                 while (item != NULL) {
-                    Ht_item* next = item->next;
+                    HtItem* next = item->next;
                     free_item(item);
                     item = next;
                 }
@@ -107,7 +107,7 @@ void ht_insert(HashTable* table, char* key, StatData* value) {
 
     int index = hash_function(atol(key), table->size);
     //assert(index > 0 && index < table->size);
-    Ht_item* item = create_item(key, value);
+    HtItem* item = create_item(key, value);
     assert(item);
 
     if(!table->items[index]){
@@ -129,7 +129,7 @@ void ht_merge_key(HashTable* table, char* key, StatData* value, void (*merge_cal
 
     int index = hash_function(atol(key), table->size);  
     //assert(index > 0 && index < table->size);
-    Ht_item* item = create_item(key, value);
+    HtItem* item = create_item(key, value);
     if(!item) {
         perror("Unable to create_item in ht_merge_key()");
         return;
@@ -142,7 +142,7 @@ void ht_merge_key(HashTable* table, char* key, StatData* value, void (*merge_cal
     } 
     else {
         //Iterate branch:
-        Ht_item* iter = table->items[index];
+        HtItem* iter = table->items[index];
         while(iter != NULL) {
             // Collision, in case of duplicate id - merge keys via merge_callback.
             if(strcmp(key, iter->key) == 0) { 
@@ -179,7 +179,7 @@ StatData* ht_search(HashTable* table, char* key) {
     }
     int index = hash_function(atol(key), table->size); 
     //assert(index > 0 && index < size);
-    Ht_item* item = table->items[index];
+    HtItem* item = table->items[index];
     while(item != NULL)
     {
         if (strcmp(item->key, key) == 0) {
@@ -196,8 +196,8 @@ uint8_t ht_delete(HashTable* table, char* key) {
 
     int index = hash_function(atol(key), table->size);
     //assert(index > 0 && index < size);
-    Ht_item* current = table->items[index];
-    Ht_item* prev = NULL;
+    HtItem* current = table->items[index];
+    HtItem* prev = NULL;
 
     while (current != NULL) {
         if (strcmp(current->key, key) == 0) {
@@ -219,13 +219,13 @@ uint8_t ht_delete(HashTable* table, char* key) {
     return -1;
 }
 
-void ht_iterate(HashTable* table, void (*callback)(Ht_item*)) {
+void ht_iterate(HashTable* table, void (*callback)(HtItem*)) {
     if (!table || !table->items || !callback) {
         return; 
     }
 
-    for (int i = 0; i < table->size; i++) {
-        Ht_item* current = table->items[i];
+    for (size_t i = 0; i < table->size; i++) {
+        HtItem* current = table->items[i];
         while (current != NULL) {
             callback(current);
             current = current->next;

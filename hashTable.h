@@ -10,21 +10,21 @@
 
 #define KEY_BUFFER_LEN 20
 
-typedef struct Ht_item {
+typedef struct HtItem {
     char* key;            // String representation of the id
     StatData* value;      // Pointer to the StatData
-    struct Ht_item* next; // For chaining
-} Ht_item;
+    struct HtItem* next; // For chaining
+} HtItem;
 
 // Caller shouldn't free key string
-Ht_item* create_item(const char* key, void* value);
+HtItem* create_item(const char* key, void* value);
 
-void free_item(Ht_item* item);
+void free_item(HtItem* item);
 
 typedef struct HashTable {
-    Ht_item** items;   // Array of pointers to Ht_item
-    int size;      // Capacity of the hash table
-    int count;     // Number of elements currently stored
+    HtItem** items;   // Array of pointers to Ht_item
+    size_t size;      // Capacity of the hash table
+    size_t count;     // Number of elements currently stored
 } HashTable;
 
 HashTable* create_table(int size);
@@ -51,7 +51,7 @@ StatData* ht_search(HashTable* table, char* key);
 
 uint8_t ht_delete(HashTable* table, char* key);
 
-void ht_iterate(HashTable* table, void (*callback)(Ht_item*));
+void ht_iterate(HashTable* table, void (*callback)(HtItem*));
 
 void InsertDumpToHT(StatData* data_array, size_t array_size, HashTable* ht);
 

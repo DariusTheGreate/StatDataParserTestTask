@@ -114,12 +114,12 @@ StatData* generateRandomStatDataWithIncreasingIds(int numElements) {
 int containsDuplicates(HashTable* table, StatData* a, StatData* b) {
     (void)a;
     (void)b;
-    for(int j = 0; j < table->size; ++j) {
-        Ht_item* currentJ = table->items[j];
+    for(size_t j = 0; j < table->size; ++j) {
+        HtItem* currentJ = table->items[j];
         while(currentJ != NULL) { 
             if(currentJ->value) {
-                for (int i = 0; i < table->size; i++) {
-                    Ht_item* current = table->items[i];
+                for (size_t i = 0; i < table->size; i++) {
+                    HtItem* current = table->items[i];
                     while (current != NULL) {
                         if(current != currentJ && current->value && current->value->id == currentJ->value->id) {
                             printf("Duplicates detected %ld, %ld\n", current->value->id, currentJ->value->id);

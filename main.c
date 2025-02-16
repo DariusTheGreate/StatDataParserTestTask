@@ -8,10 +8,7 @@
 #include "statData.h"
 
 // Todo:
-// - Review 
 // - Add readme
-// - make size_t in ht
-// - rename htitem
 
 static inline size_t MIN(size_t x, size_t y) {
     return (x > y) ? x : y;
