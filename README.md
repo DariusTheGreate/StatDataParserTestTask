@@ -7,7 +7,7 @@ Hashtable is based on array of items(each item stores linked list of collisions)
 The novelty I use is merging on collision via function
 > ht_merge_key(table, key, value, mergeCallback)  
 
-When I detect collision in JoinDump() - I traverse list of collisions and combine similar 
+When I detect collision in JoinDump() - I traverse list of collisions and combine similar.
 I DO NOT resize hashtable. O(hashtable size) in JoinDump is length of first and second arrays summarized.
 
 Alternative algorithms would be 
